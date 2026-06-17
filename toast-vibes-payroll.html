@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Toast Vibes Payroll</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.21.2/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f0f0f;color:#f0ece4;font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;font-size:14px;min-height:100vh}
+input,select,button{font-family:inherit;font-size:13px}
+input:focus,select:focus{outline:2px solid #f5c842;outline-offset:1px}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:#111}
+::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const STORAGE_KEY = "toast_vibes_v3";
+const DEFAULT_PEOPLE = [
+  {id:1,name:"Sarah",role:"Agent",location:"Toast Kambove",baseSalary:150,cycle:15},
+  {id:2,name:"Ado",role:"Agent",location:"Toast Kambove",baseSalary:100,cycle:15},
+  {id:3,name:"Magalie",role:"Agent",location:"Toast Kambove",baseSalary:100,cycle:15},
+  {id:4,name:"Blessing",role:"Agent",location:"Dépôt",baseSalary:150,cycle:15},
+  {id:5,name:"Junior",role:"Agent",location:"Dépôt",baseSalary:100,cycle:15},
+  {id:6,name:"Belange",role:"Agent",location:"Toast Malela",baseSalary:100,cycle:15},
+  {id:7,name:"Prescillia",role:"Gestion réseaux sociaux",location:"—",baseSalary:50,cycle:15},
+  {id:8,name:"Dan",role:"Agent",location:"Dépôt",baseSalary:100,cycle:15},
+  {id:9,name:"Josh",role:"Agent",location:"Toast Lac Kipopo",baseSalary:100,cycle:15},
+  {id:10,name:"Vany",role:"Agent",location:"Toast Malela",baseSalary:150,cycle:15},
+  {id:11,name:"Chadrack",role:"Cuisine centrale",location:"Cuisine Centrale",baseSalary:120,cycle:15},
+  {id:12,name:"Ruth Amisi",role:"Agent",location:"Toast Lac Kipopo",baseSalary:150,cycle:15},
+  {id:13,name:"Fideline",role:"Agent",location:"Toast Lac Kipopo",baseSalary:115,cycle:15},
+  {id:14,name:"Loyer Dépôt",role:"Loyer",location:"Dépôt",baseSalary:70,cycle:15,isFixed:true},
+  {id:15,name:"Ma Leki",role:"Agent",location:"Dépôt",baseSalary:120,cycle:2},
+  {id:16,name:"Cedrick",role:"Agent",location:"Dépôt",baseSalary:140,cycle:2},
+  {id:17,name:"Ruth Bwa",role:"Agent",location:"Toast Malela",baseSalary:100,cycle:2},
+  {id:18,name:"Jesmiel",role:"Administration",location:"Administration",baseSalary:140,cycle:2},
+  {id:19,name:"Marcella",role:"Agent",location:"Toast Malela",baseSalary:120,cycle:2},
+  {id:20,name:"Chef Didier",role:"Chef cuisinier",location:"Cuisine Centrale",baseSalary:200,cycle:2},
+  {id:21,name:"Chef Kefass",role:"Chef cuisinier",location:"Cuisine Centrale",baseSalary:150,cycle:2},
+  {id:22,name:"Lucresse",role:"Administration",location:"Administration",baseSalary:180,cycle:2},
+  {id:23,name:"Brave",role:"Cuisine",location:"Cuisine Centrale",baseSalary:120,cycle:2},
+  {id:24,name:"William",role:"Agent",location:"Dépôt",baseSalary:80,cycle:2},
+  {id:25,name:"Narcisse",role:"Agent",location:"Toast Malela",baseSalary:100,cycle:2},
+  {id:26,name:"Victor",role:"Agent",location:"Toast Malela",baseSalary:140,cycle:2},
+  {id:27,name:"Issac",role:"Agent",location:"Toast Kambove",baseSalary:100,cycle:2},
+  {id:28,name:"Cabinet Jhonny",role:"Avocat",location:"—",baseSalary:150,cycle:2,isFixed:true},
+  {id:29,name:"Garde Lac Kipopo",role:"Gardien",location:"Toast Lac Kipopo",baseSalary:200,cycle:2,isFixed:true},
+  {id:30,name:"Loyer Kambove",role:"Loyer",location:"Toast Kambove",baseSalary:200,cycle:2,isFixed:true},
+  {id:31,name:"Loyer Lac Kipopo",role:"Loyer",location:"Toast Lac Kipopo",baseSalary:200,cycle:5,isFixed:true},
+  {id:32,name:"Loyer Malela",role:"Loyer",location:"Toast Malela",baseSalary:500,cycle:5,isFixed:true},
+];
+const DEFAULT_SITES=["Toast Kambove","Toast Malela","Toast Lac Kipopo","Dépôt","Cuisine Centrale","Administration","—"];
+const CC={15:"#f5c842",2:"#4ecb71",5:"#7eb8f5"};
+const CL={15:"Paye du 15",2:"Paye du 2",5:"Paiements du 5"};
+const EMPTY={name:"",role:"",location:"",baseSalary:"",cycle:15,isFixed:false};
+
+function load(){try{const s=localStorage.getItem(STORAGE_KEY);return s?JSON.parse(s):null;}catch{return null;}}
+
+function App(){
+  const sv=load();
+  const [people,setPeople]=React.useState(sv?.people||DEFAULT_PEOPLE);
+  const [sites,setSites]=React.useState(sv?.sites||DEFAULT_SITES);
+  const [deds,setDeds]=React.useState(sv?.deds||{});
+  const [advs,setAdvs]=React.useState(sv?.advs||{});
+  const [hist,setHist]=React.useState(sv?.hist||[]);
+  const [view,setView]=React.useState("dash");
+  const [actCycle,setActCycle]=React.useState(15);
+  const [dedMod,setDedMod]=React.useState(null);
+  const [payMod,setPayMod]=React.useState(null);
+  const [confPay,setConfPay]=React.useState(false);
+  const [nd,setNd]=React.useState({amount:"",reason:""});
+  const [search,setSearch]=React.useState("");
+  const [manMod,setManMod]=React.useState(null);
+  const [manForm,setManForm]=React.useState(EMPTY);
+  const [siteMod,setSiteMod]=React.useState(false);
+  const [newSite,setNewSite]=React.useState("");
+  const [delConf,setDelConf]=React.useState(null);
+
+  React.useEffect(()=>{localStorage.setItem(STORAGE_KEY,JSON.stringify({people,sites,deds,advs,hist}));},[people,sites,deds,advs,hist]);
+
+  const getPend=(id)=>(deds[id]||[]).filter(d=>!d.paid);
+  const getAdvAmt=(p)=>Math.floor(p.baseSalary*0.5);
+  const hasPendAdv=(id)=>advs[id]?.pending||false;
+  const getNet=(p)=>{const dt=getPend(p.id).reduce((s,d)=>s+d.amount,0);const av=hasPendAdv(p.id)?getAdvAmt(p):0;return Math.max(0,p.baseSalary-dt-av);};
+  const cppl=(c)=>people.filter(p=>p.cycle===c);
+  const ctot=(c)=>cppl(c).reduce((s,p)=>s+getNet(p),0);
+  const cbase=(c)=>cppl(c).reduce((s,p)=>s+p.baseSalary,0);
+
+  const addDed=(id)=>{
+    if(!nd.amount||!nd.reason)return;
+    const d={id:Date.now(),amount:Number(nd.amount),reason:nd.reason,date:new Date().toLocaleDateString("fr-FR"),paid:false};
+    setDeds(prev=>({...prev,[id]:[...(prev[id]||[]),d]}));
+    setNd({amount:"",reason:""});setDedMod(null);
+  };
+  const remDed=(eid,did)=>setDeds(prev=>({...prev,[eid]:(prev[eid]||[]).filter(d=>d.id!==did)}));
+  const togAdv=(id,bs)=>setAdvs(prev=>({...prev,[id]:{pending:!prev[id]?.pending,amount:Math.floor(bs*0.5)}}));
+
+  const procPay=(cycle)=>{
+    const cp=cppl(cycle);
+    const rec={id:Date.now(),cycle,label:CL[cycle],date:new Date().toLocaleDateString("fr-FR"),
+      payments:cp.map(p=>({name:p.name,location:p.location,base:p.baseSalary,net:getNet(p),dd:getPend(p.id),adv:hasPendAdv(p.id)?getAdvAmt(p):0})),
+      total:ctot(cycle)};
+    setHist(prev=>[rec,...prev]);
+    const nd2={...deds};const na={...advs};
+    cp.forEach(p=>{if(nd2[p.id])nd2[p.id]=nd2[p.id].map(d=>({...d,paid:true}));if(na[p.id]?.pending)na[p.id]={...na[p.id],pending:false};});
+    setDeds(nd2);setAdvs(na);setPayMod(null);setConfPay(false);
+  };
+
+  const openAdd=()=>{setManForm(EMPTY);setManMod("add");};
+  const openEdit=(p)=>{setManForm({...p});setManMod(p);};
+  const savePerson=()=>{
+    if(!manForm.name||!manForm.baseSalary)return;
+    const e={...manForm,baseSalary:Number(manForm.baseSalary)};
+    if(manMod==="add")setPeople(prev=>[...prev,{...e,id:Date.now()}]);
+    else setPeople(prev=>prev.map(p=>p.id===manMod.id?{...p,...e}:p));
+    setManMod(null);
+  };
+  const delPerson=(id)=>{
+    setPeople(prev=>prev.filter(p=>p.id!==id));
+    setDeds(prev=>{const n={...prev};delete n[id];return n;});
+    setAdvs(prev=>{const n={...prev};delete n[id];return n;});
+    setDelConf(null);setManMod(null);
+  };
+  const addSite=()=>{if(!newSite.trim())return;setSites(prev=>[...prev,newSite.trim()]);setNewSite("");};
+  const filtered=cppl(actCycle).filter(p=>p.name.toLowerCase().includes(search.toLowerCase())||p.location.toLowerCase().includes(search.toLowerCase()));
+
+  const totalBase=cbase(15)+cbase(2)+cbase(5);
+  const totalNet=ctot(15)+ctot(2)+ctot(5);
+
+  const s={
+    hdr:{background:"#141414",borderBottom:"1px solid #222",padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:50},
+    logo:{fontSize:17,fontWeight:800,letterSpacing:"0.08em",color:"#f5c842"},
+    nav:{display:"flex",gap:5},
+    nb:(k)=>({padding:"5px 10px",borderRadius:6,border:"none",cursor:"pointer",background:view===k?"#f5c842":"#222",color:view===k?"#111":"#888",fontSize:11,fontWeight:600}),
+    wrap:{padding:"16px",maxWidth:860,margin:"0 auto"},
+    card:{background:"#141414",border:"1px solid #222",borderRadius:10,padding:"16px 18px",marginBottom:12},
+    row:{display:"flex",justifyContent:"space-between",alignItems:"center"},
+    inp:{width:"100%",background:"#0f0f0f",border:"1px solid #2a2a2a",borderRadius:6,padding:"8px 10px",color:"#f0ece4",fontSize:13,boxSizing:"border-box"},
+    lab:{fontSize:10,color:"#555",marginBottom:5,display:"block"},
+    btn:(bg,clr,extra={})=>({border:"none",borderRadius:6,padding:"7px 12px",cursor:"pointer",fontSize:11,fontWeight:600,background:bg,color:clr,...extra}),
+    ovl:{position:"fixed",inset:0,background:"#000b",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200},
+    mod:{background:"#141414",border:"1px solid #2a2a2a",borderRadius:12,padding:24,width:330,maxHeight:"85vh",overflowY:"auto"},
+  };
+
+  return (
+    <div style={{minHeight:"100vh",background:"#0f0f0f",color:"#f0ece4"}}>
+      <div style={s.hdr}>
+        <div style={{display:"flex",alignItems:"baseline",gap:8}}>
+          <span style={s.logo}>TOAST VIBES</span>
+          <span style={{fontSize:10,color:"#555",letterSpacing:"0.15em"}}>PAYROLL</span>
+        </div>
+        <div style={s.nav}>
+          {[["dash","Accueil"],["team","Équipe"],["manage","Gestion"],["history","Historique"]].map(([k,l])=>(
+            <button key={k} onClick={()=>setView(k)} style={s.nb(k)}>{l}</button>
+          ))}
+        </div>
+      </div>
+
+      <div style={s.wrap}>
+        {view==="dash"&&(<>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
+            <div style={s.card}><div style={{fontSize:10,color:"#555",letterSpacing:"0.1em",marginBottom:6}}>TOTAL BRUT</div><div style={{fontSize:24,fontWeight:700}}>${totalBase}</div></div>
+            <div style={{...s.card,border:"1px solid #2a3d2a"}}><div style={{fontSize:10,color:"#555",letterSpacing:"0.1em",marginBottom:6}}>À PAYER NET</div><div style={{fontSize:24,fontWeight:700,color:"#4ecb71"}}>${totalNet}</div></div>
+          </div>
+          {[15,2,5].map(cycle=>{
+            const cp=cppl(cycle);const color=CC[cycle];
+            return(<div key={cycle} style={{...s.card,border:`1px solid ${color}25`,marginBottom:14}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                <div><div style={{fontSize:10,color,letterSpacing:"0.12em",marginBottom:3}}>{CL[cycle].toUpperCase()}</div><div style={{fontSize:12,color:"#666"}}>{cp.length} lignes · Base ${cbase(cycle)}</div></div>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{fontWeight:700,fontSize:18,color:ctot(cycle)<cbase(cycle)?"#ff6b6b":color}}>${ctot(cycle)}</div>
+                  {cycle!==5&&<button onClick={()=>{setPayMod(cycle);setConfPay(false);}} style={s.btn(color,"#111")}>Valider →</button>}
+                </div>
+              </div>
+              {cp.map(p=>{const pd=getPend(p.id);const adv=hasPendAdv(p.id);const net=getNet(p);return(
+                <div key={p.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderTop:"1px solid #1e1e1e"}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:500,fontSize:13}}>{p.name}{p.isFixed&&<span style={{fontSize:9,background:"#222",color:"#666",borderRadius:4,padding:"1px 5px",marginLeft:4}}>FIXE</span>}</div>
+                    <div style={{fontSize:11,color:"#555"}}>{p.location}</div>
+                    {pd.map(d=><div key={d.id} style={{fontSize:11,color:"#ff8c8c"}}>⚠ {d.reason} −${d.amount}</div>)}
+                    {adv&&<div style={{fontSize:11,color:"#f5c842"}}>↓ Avance −${getAdvAmt(p)}</div>}
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <div style={{textAlign:"right"}}>
+                      <div style={{fontWeight:600,color:(pd.length>0||adv)?"#ff6b6b":"#f0ece4"}}>${net}</div>
+                      {(pd.length>0||adv)&&<div style={{fontSize:10,color:"#555"}}>/${p.baseSalary}</div>}
+                    </div>
+                    {!p.isFixed&&<button onClick={()=>setDedMod(p)} style={s.btn("#1e1e1e","#666",{border:"1px solid #2a2a2a",padding:"4px 8px"})}>−</button>}
+                  </div>
+                </div>
+              );})}
+            </div>);
+          })}
+        </>)}
+
+        {view==="team"&&(<>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher..." style={{...s.inp,marginBottom:12,padding:"9px 14px"}}/>
+          <div style={{display:"flex",gap:6,marginBottom:14}}>
+            {[15,2,5].map(c=><button key={c} onClick={()=>setActCycle(c)} style={s.btn(actCycle===c?CC[c]:"#222",actCycle===c?"#111":"#888")}>{CL[c]}</button>)}
+          </div>
+          {filtered.map(p=>{
+            const pd=deds[p.id]||[];const adv=hasPendAdv(p.id);const net=getNet(p);
+            return(<div key={p.id} style={{...s.card,border:getPend(p.id).length>0?"1px solid #ff6b6b30":"1px solid #1e1e1e",marginBottom:10}}>
+              <div style={s.row}>
+                <div>
+                  <div style={{fontWeight:600,fontSize:14}}>{p.name}</div>
+                  <div style={{fontSize:11,color:"#666",marginTop:2}}>{p.role} · {p.location}</div>
+                  <div style={{fontSize:12,color:CC[p.cycle],marginTop:3}}>Base ${p.baseSalary} · {CL[p.cycle]}</div>
+                </div>
+                <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                  <div style={{textAlign:"right"}}>
+                    <div style={{fontSize:17,fontWeight:700,color:net<p.baseSalary?"#ff6b6b":"#4ecb71"}}>${net}</div>
+                    {net<p.baseSalary&&<div style={{fontSize:10,color:"#555"}}>/{p.baseSalary}</div>}
+                  </div>
+                  <button onClick={()=>openEdit(p)} style={s.btn("#1e1e1e","#888",{border:"1px solid #2a2a2a"})}>✏</button>
+                </div>
+              </div>
+              {pd.length>0&&<div style={{marginTop:10,borderTop:"1px solid #1e1e1e",paddingTop:8}}>
+                {pd.map(d=><div key={d.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3,opacity:d.paid?0.35:1}}>
+                  <span style={{fontSize:11,color:d.paid?"#555":"#ff8c8c"}}>{d.paid?"✓":"⚠"} {d.reason} <span style={{color:"#444"}}>({d.date})</span></span>
+                  <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                    <span style={{fontSize:11,color:d.paid?"#444":"#ff6b6b"}}>−${d.amount}</span>
+                    {!d.paid&&<button onClick={()=>remDed(p.id,d.id)} style={{background:"none",border:"none",color:"#444",cursor:"pointer",fontSize:13}}>×</button>}
+                  </div>
+                </div>)}
+              </div>}
+              {!p.isFixed&&<div style={{display:"flex",gap:8,marginTop:10}}>
+                <button onClick={()=>setDedMod(p)} style={s.btn("#1e1e1e","#888",{border:"1px solid #2a2a2a"})}>+ Sanction</button>
+                {actCycle!==5&&<button onClick={()=>togAdv(p.id,p.baseSalary)} style={s.btn(adv?"#2a1e00":"#1e1e1e",adv?"#f5c842":"#888",{border:adv?"1px solid #f5c84250":"1px solid #2a2a2a"})}>
+                  {adv?`✓ Avance −$${getAdvAmt(p)}`:`Avance 50% ($${getAdvAmt(p)})`}
+                </button>}
+              </div>}
+            </div>);
+          })}
+        </>)}
+
+        {view==="manage"&&(<>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+            <div style={{fontSize:10,color:"#555",letterSpacing:"0.1em"}}>GESTION</div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>setSiteMod(true)} style={s.btn("#222","#aaa")}>+ Nouveau site</button>
+              <button onClick={openAdd} style={s.btn("#f5c842","#111")}>+ Nouvel agent</button>
+            </div>
+          </div>
+          <div style={{...s.card,marginBottom:20}}>
+            <div style={{fontSize:10,color:"#555",letterSpacing:"0.1em",marginBottom:10}}>SITES</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+              {sites.map(st=><div key={st} style={{display:"flex",alignItems:"center",gap:6,background:"#1e1e1e",borderRadius:6,padding:"5px 10px"}}>
+                <span style={{fontSize:12}}>{st}</span>
+                {st!=="—"&&<button onClick={()=>setSites(prev=>prev.filter(x=>x!==st))} style={{background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:12,padding:0}}>×</button>}
+              </div>)}
+            </div>
+          </div>
+          {[15,2,5].map(cycle=><div key={cycle} style={{marginBottom:18}}>
+            <div style={{fontSize:10,color:CC[cycle],letterSpacing:"0.12em",marginBottom:10}}>{CL[cycle].toUpperCase()} — {cppl(cycle).length} lignes</div>
+            {cppl(cycle).map(p=><div key={p.id} style={{...s.card,marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div>
+                <div style={{fontWeight:500,fontSize:13}}>{p.name}{p.isFixed&&<span style={{fontSize:9,background:"#222",color:"#666",borderRadius:4,padding:"1px 5px",marginLeft:4}}>FIXE</span>}</div>
+                <div style={{fontSize:11,color:"#555",marginTop:2}}>{p.role} · {p.location} · ${p.baseSalary}</div>
+              </div>
+              <div style={{display:"flex",gap:6}}>
+                <button onClick={()=>openEdit(p)} style={s.btn("#1e1e1e","#aaa",{border:"1px solid #2a2a2a"})}>✏ Modifier</button>
+                <button onClick={()=>setDelConf(p)} style={s.btn("#1e1e1e","#ff6b6b",{border:"1px solid #ff6b6b30"})}>Supprimer</button>
+              </div>
+            </div>)}
+          </div>)}
+        </>)}
+
+        {view==="history"&&(<>
+          <div style={{fontSize:10,color:"#555",letterSpacing:"0.1em",marginBottom:14}}>HISTORIQUE</div>
+          {hist.length===0&&<div style={{textAlign:"center",color:"#444",padding:"60px 0"}}>Aucun paiement effectué.</div>}
+          {hist.map(rec=><div key={rec.id} style={{...s.card,marginBottom:12}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:12}}>
+              <div><div style={{fontWeight:700,color:CC[rec.cycle]}}>{rec.label}</div><div style={{fontSize:11,color:"#555",marginTop:2}}>Traité le {rec.date}</div></div>
+              <div style={{fontWeight:700,fontSize:18,color:"#4ecb71"}}>${rec.total}</div>
+            </div>
+            {rec.payments.map((p,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderTop:"1px solid #1a1a1a"}}>
+              <div>
+                <div style={{fontSize:12,fontWeight:500}}>{p.name}</div>
+                {p.dd.map((d,j)=><div key={j} style={{fontSize:10,color:"#ff8c8c"}}>⚠ {d.reason} −${d.amount}</div>)}
+                {p.adv>0&&<div style={{fontSize:10,color:"#f5c842"}}>↓ Avance −${p.adv}</div>}
+              </div>
+              <div style={{textAlign:"right"}}>
+                <div style={{fontSize:13,fontWeight:600}}>${p.net}</div>
+                {p.net<p.base&&<div style={{fontSize:10,color:"#555"}}>/{p.base}</div>}
+              </div>
+            </div>)}
+          </div>)}
+        </>)}
+      </div>
+
+      {dedMod&&<div style={s.ovl}>
+        <div style={s.mod}>
+          <div style={{fontWeight:700,fontSize:15,marginBottom:4}}>Sanction</div>
+          <div style={{fontSize:12,color:"#888",marginBottom:16}}>{dedMod.name} · Base ${dedMod.baseSalary}</div>
+          <div style={{marginBottom:12}}><label style={s.lab}>MOTIF</label><input value={nd.reason} onChange={e=>setNd(p=>({...p,reason:e.target.value}))} placeholder="Retard, comportement..." style={s.inp}/></div>
+          <div style={{marginBottom:18}}><label style={s.lab}>MONTANT ($)</label><input type="number" value={nd.amount} onChange={e=>setNd(p=>({...p,amount:e.target.value}))} placeholder="Ex: 20" style={s.inp}/></div>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>{setDedMod(null);setNd({amount:"",reason:""}); }} style={{...s.btn("#1e1e1e","#888"),flex:1,padding:"9px"}}>Annuler</button>
+            <button onClick={()=>addDed(dedMod.id)} style={{...s.btn("#ff6b6b","#fff"),flex:1,padding:"9px"}}>Enregistrer</button>
+          </div>
+        </div>
+      </div>}
+
+      {manMod&&<div style={s.ovl}>
+        <div style={s.mod}>
+          <div style={{fontWeight:700,fontSize:15,marginBottom:18}}>{manMod==="add"?"Nouvel agent":"Modifier — "+manMod.name}</div>
+          {[{l:"Nom",k:"name",pl:"Nom complet"},{l:"Poste",k:"role",pl:"Ex: Agent"},{l:"Salaire ($)",k:"baseSalary",pl:"Ex: 150",t:"number"}].map(f=>(
+            <div key={f.k} style={{marginBottom:12}}><label style={s.lab}>{f.l.toUpperCase()}</label><input type={f.t||"text"} value={manForm[f.k]} onChange={e=>setManForm(p=>({...p,[f.k]:e.target.value}))} placeholder={f.pl} style={s.inp}/></div>
+          ))}
+          <div style={{marginBottom:12}}><label style={s.lab}>SITE</label>
+            <select value={manForm.location} onChange={e=>setManForm(p=>({...p,location:e.target.value}))} style={{...s.inp}}>
+              {sites.map(st=><option key={st} value={st}>{st}</option>)}
+            </select>
+          </div>
+          <div style={{marginBottom:12}}><label style={s.lab}>CYCLE</label>
+            <div style={{display:"flex",gap:6}}>
+              {[15,2,5].map(c=><button key={c} onClick={()=>setManForm(p=>({...p,cycle:c}))} style={{...s.btn(manForm.cycle===c?CC[c]:"#1e1e1e",manForm.cycle===c?"#111":"#888"),flex:1,padding:"7px"}}>{c===15?"15":c===2?"2":"5"}</button>)}
+            </div>
+          </div>
+          <div style={{marginBottom:16,display:"flex",alignItems:"center",gap:8}}>
+            <input type="checkbox" id="isFixed" checked={manForm.isFixed||false} onChange={e=>setManForm(p=>({...p,isFixed:e.target.checked}))}/>
+            <label htmlFor="isFixed" style={{fontSize:12,color:"#888",cursor:"pointer"}}>Paiement fixe (loyer, avocat...)</label>
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>setManMod(null)} style={{...s.btn("#1e1e1e","#888"),flex:1,padding:"9px"}}>Annuler</button>
+            <button onClick={savePerson} style={{...s.btn("#f5c842","#111"),flex:1,padding:"9px"}}>{manMod==="add"?"Ajouter":"Enregistrer"}</button>
+          </div>
+        </div>
+      </div>}
+
+      {delConf&&<div style={s.ovl}>
+        <div style={s.mod}>
+          <div style={{fontWeight:700,fontSize:15,marginBottom:8}}>Supprimer {delConf.name} ?</div>
+          <div style={{fontSize:12,color:"#888",marginBottom:20}}>Action irréversible.</div>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>setDelConf(null)} style={{...s.btn("#1e1e1e","#888"),flex:1,padding:"9px"}}>Annuler</button>
+            <button onClick={()=>delPerson(delConf.id)} style={{...s.btn("#ff6b6b","#fff"),flex:1,padding:"9px"}}>Supprimer</button>
+          </div>
+        </div>
+      </div>}
+
+      {siteMod&&<div style={s.ovl}>
+        <div style={s.mod}>
+          <div style={{fontWeight:700,fontSize:15,marginBottom:18}}>Nouveau site</div>
+          <div style={{marginBottom:16}}><label style={s.lab}>NOM DU SITE</label><input value={newSite} onChange={e=>setNewSite(e.target.value)} placeholder="Ex: Toast Fungurume" style={s.inp}/></div>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>{setSiteMod(false);setNewSite("");}} style={{...s.btn("#1e1e1e","#888"),flex:1,padding:"9px"}}>Annuler</button>
+            <button onClick={()=>{addSite();setSiteMod(false);}} style={{...s.btn("#f5c842","#111"),flex:1,padding:"9px"}}>Ajouter</button>
+          </div>
+        </div>
+      </div>}
+
+      {payMod&&<div style={s.ovl}>
+        <div style={s.mod}>
+          <div style={{fontWeight:700,fontSize:15,color:CC[payMod],marginBottom:4}}>{CL[payMod]}</div>
+          <div style={{fontSize:12,color:"#666",marginBottom:14}}>Récapitulatif</div>
+          {cppl(payMod).map(p=><div key={p.id} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderTop:"1px solid #1e1e1e"}}>
+            <div>
+              <div style={{fontSize:12,fontWeight:500}}>{p.name}</div>
+              {getPend(p.id).map(d=><div key={d.id} style={{fontSize:10,color:"#ff8c8c"}}>⚠ {d.reason} −${d.amount}</div>)}
+              {hasPendAdv(p.id)&&<div style={{fontSize:10,color:"#f5c842"}}>↓ Avance −${getAdvAmt(p)}</div>}
+            </div>
+            <div style={{fontWeight:600,color:getNet(p)<p.baseSalary?"#ff6b6b":"#f0ece4"}}>${getNet(p)}</div>
+          </div>)}
+          <div style={{borderTop:"1px solid #333",paddingTop:10,marginTop:6,display:"flex",justifyContent:"space-between",fontWeight:700}}>
+            <span>TOTAL</span><span style={{color:CC[payMod]}}>${ctot(payMod)}</span>
+          </div>
+          {!confPay?<div style={{display:"flex",gap:8,marginTop:14}}>
+            <button onClick={()=>setPayMod(null)} style={{...s.btn("#1e1e1e","#888"),flex:1,padding:"9px"}}>Annuler</button>
+            <button onClick={()=>setConfPay(true)} style={{...s.btn(CC[payMod],"#111"),flex:1,padding:"9px"}}>Confirmer</button>
+          </div>:<div style={{marginTop:14}}>
+            <div style={{background:"#1a1800",border:"1px solid #f5c84240",borderRadius:8,padding:10,fontSize:12,color:"#f5c842",marginBottom:12}}>Les sanctions et avances seront archivées.</div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>setConfPay(false)} style={{...s.btn("#1e1e1e","#888"),flex:1,padding:"9px"}}>Retour</button>
+              <button onClick={()=>procPay(payMod)} style={{...s.btn("#4ecb71","#111"),flex:1,padding:"9px"}}>✓ Valider & payer</button>
+            </div>
+          </div>}
+        </div>
+      </div>}
+    </div>
+  );
+}
+
+const root=ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App/>);
+</script>
+</body>
+</html>
